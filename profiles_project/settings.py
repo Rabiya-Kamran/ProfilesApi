@@ -38,8 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework.authtoken',
-    'profiles_api'
+    'rest_framework.authtoken', #for token authentication functionality
+    'profiles_api',
 ]
 
 MIDDLEWARE = [
@@ -121,3 +121,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#added manually, helps to authenticate user through UserProfile model
+AUTH_USER_MODEL= 'profiles_api.UserProfile'
