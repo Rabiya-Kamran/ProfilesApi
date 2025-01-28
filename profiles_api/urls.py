@@ -10,7 +10,7 @@ router=DefaultRouter()
 router.register('hello-viewset', views.HelloViewSet, base_name='hello-viewset')
 #no need of base_name as we have given queryset in UserProfileViewSet so django can confiqure out the name from the model that is assigned to it
 router.register('profile', views.UserProfileViewSet)
-
+router.register('feed', views.UserProfileFeedViewSet)
 
 urlpatterns = [
 
