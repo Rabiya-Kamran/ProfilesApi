@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status   #gives status codes WITH A HANDY RESPONSE
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
+from rest_framework import filters
 
 from profiles_api import serializers
 from profiles_api import models
@@ -113,5 +114,19 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     """Handle creating and updating profiles"""
     serializer_class= serializers.UserProfileSerializer
     queryset=models.UserProfile.objects.all()
+
+    #how user will authenticate
+    #add a coma so python knows it is a tuple
     authentication_classes=(TokenAuthentication, )
+
+    #how permissions will be granted to user to do certain things
+    #add a coma so python knows it is a tuple
     permission_classes=(permissions.UpdateOwnProfile,)
+    #filter_backends is defined in DRF's GenericAPIView,
+    #which is the base class for most DRF views
+    #like ModelViewSet and APIView
+    filter_backends = (filters.SearchFilter,)
+
+    #if we search a specific letter it will return all fields having that letter
+    search_fields=('name', 'email',)
+    print( 'email')
