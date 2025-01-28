@@ -17,7 +17,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
             #set password to write only so it can not be retrived or GET
             #only create, delete and update password is possible
-            extra_krwags={
+            extra_kwargs={
                 'password': {
                        'write_only':True,
                        'style':{'input_type': 'password'}
