@@ -13,6 +13,8 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 
 # Restart Supervisor service
-sudo systemctl restart supervisord
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart profiles_api
 
 echo "DONE! :)"
