@@ -15,7 +15,13 @@ source $PROJECT_BASE_PATH/env/bin/activate
 python manage.py migrate
 python manage.py collectstatic --noinput
 
-# Restart Supervisor-managed process
+# Restart Supervisor service and update process
 sudo systemctl restart supervisord
+sleep 3  # Give it a moment to restart
+
+# Reload Supervisor to apply any changes
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart profiles_api
 
 echo "DONE! :)"
