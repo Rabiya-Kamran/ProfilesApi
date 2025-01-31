@@ -2,65 +2,67 @@
 
 set -e  # Exit immediately if a command exits with a non-zero status
 
-# TODO: Set to URL of git repo.
-PROJECT_GIT_URL='https://github.com/Rabiya-Kamran/ProfilesApi'
-PROJECT_BASE_PATH='/usr/local/apps/profiles-rest-api'
+# TODO: Set to URL of your Git repository
+PROJECT_GIT_URL="https://github.com/Rabiya-Kamran/ProfilesApi"
+PROJECT_BASE_PATH="/usr/local/apps/profiles-rest-api"
 
-# Set system locale (Amazon Linux does not have locale-gen)
-echo "Setting system locale..."
-sudo localectl set-locale LANG=en_US.UTF-8
-export LANG=en_US.UTF-8
+echo "🔹 Installing system dependencies..."
+sudo dnf groupinstall -y "Development Tools"
+sudo dnf install -y gcc gcc-c++ python3-devel make libffi-devel \
+                   pcre pcre-devel sqlite nginx git supervisor
 
-# Install required dependencies
-echo "Installing dependencies..."
-sudo dnf update -y
-sudo dnf install -y python3 python3-devel python3-pip python3-virtualenv sqlite nginx git
+# Create project directory if it does not exist
+if [ ! -d "$PROJECT_BASE_PATH" ]; then
+    echo "📁 Creating project directory..."
+    sudo mkdir -p $PROJECT_BASE_PATH
+    sudo chown -R ec2-user:ec2-user $PROJECT_BASE_PATH
+else
+    echo "⚠️ Project directory already exists."
+fi
 
-# Create project directory and clone repo
-echo "Setting up project..."
-sudo mkdir -p $PROJECT_BASE_PATH
-sudo git clone $PROJECT_GIT_URL $PROJECT_BASE_PATH
+cd $PROJECT_BASE_PATH
+
+# Clone or update the repository
+if [ -d "$PROJECT_BASE_PATH/.git" ]; then
+    echo "🔄 Repository exists. Pulling latest changes..."
+    git reset --hard
+    git pull origin main
+else
+    echo "📥 Cloning repository..."
+    git clone $PROJECT_GIT_URL $PROJECT_BASE_PATH
+fi
 
 # Set up Python virtual environment
-echo "Creating virtual environment..."
+echo "🐍 Setting up Python environment..."
 python3 -m venv $PROJECT_BASE_PATH/env
 source $PROJECT_BASE_PATH/env/bin/activate
 
-# Install project dependencies
-echo "Installing Python dependencies..."
+# Upgrade pip and install dependencies
+echo "📦 Installing Python dependencies..."
 pip install --upgrade pip
-pip install -r $PROJECT_BASE_PATH/requirements.txt uwsgi==2.0.21
+pip install -r $PROJECT_BASE_PATH/requirements.txt
 
-# Run Django migrations
-echo "Running migrations..."
+# Install uWSGI with proper compilation tools
+echo "⚙️ Installing uWSGI..."
+pip install --no-cache-dir uwsgi==2.0.21
+
+# Run database migrations
+echo "🔄 Applying database migrations..."
 $PROJECT_BASE_PATH/env/bin/python $PROJECT_BASE_PATH/manage.py migrate
 
-# Create systemd service for uWSGI
-echo "Setting up uWSGI systemd service..."
-cat <<EOT | sudo tee /etc/systemd/system/profiles_api.service
-[Unit]
-Description=Profiles API uWSGI Service
-After=network.target
+# Setup Supervisor to manage uWSGI process
+echo "⚙️ Configuring Supervisor..."
+sudo cp $PROJECT_BASE_PATH/deploy/supervisor_profiles_api.conf /etc/supervisord.d/profiles_api.ini
+sudo systemctl enable supervisord
+sudo systemctl restart supervisord
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart profiles_api
 
-[Service]
-User=ec2-user
-Group=ec2-user
-WorkingDirectory=$PROJECT_BASE_PATH
-Environment="PATH=$PROJECT_BASE_PATH/env/bin"
-ExecStart=$PROJECT_BASE_PATH/env/bin/uwsgi --ini $PROJECT_BASE_PATH/deploy/uwsgi.ini
-
-[Install]
-WantedBy=multi-user.target
-EOT
-
-# Reload systemd to recognize the new service
-sudo systemctl daemon-reload
-sudo systemctl enable profiles_api
-sudo systemctl start profiles_api
-
-# Setup nginx to serve the application
-echo "Configuring Nginx..."
+# Setup Nginx for serving the application
+echo "🌍 Configuring Nginx..."
 sudo cp $PROJECT_BASE_PATH/deploy/nginx_profiles_api.conf /etc/nginx/conf.d/profiles_api.conf
+sudo systemctl enable nginx
 sudo systemctl restart nginx
 
-echo "Deployment complete! 🎉"
+echo "✅ Deployment complete! 🎉"
