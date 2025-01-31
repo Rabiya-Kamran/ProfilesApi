@@ -15,13 +15,10 @@ source $PROJECT_BASE_PATH/env/bin/activate
 python manage.py migrate
 python manage.py collectstatic --noinput
 
-# Restart Supervisor service and update process
-sudo systemctl restart supervisord
-sleep 3  # Give it a moment to restart
+# Kill the running process if it exists (replace with your app's process name or script)
+pkill -f 'manage.py runserver' || true  # or any other name that matches the running process
 
-# Reload Supervisor to apply any changes
-sudo supervisorctl reread
-sudo supervisorctl update
-sudo supervisorctl restart profiles_api
+# Start the application in the background
+nohup python manage.py runserver 0.0.0.0:8000 &
 
 echo "DONE! :)"
